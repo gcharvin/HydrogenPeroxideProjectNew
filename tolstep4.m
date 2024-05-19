@@ -1,0 +1,400 @@
+function [outT,outY,options]=tolstep3(display)
+
+if nargin==0
+    display=0;
+end
+
+display=1;
+
+% define the time-sequence for input (external H2O2)
+maxeT=1100; % max time to consider 
+
+[param,funH,funA,funQ,funR]=tolparam4; % initialize paremeters for WT;
+param.nullclines=[];
+
+outT={};
+outY={};
+options=[];
+
+irange=0.1*[1 2 4 8]; % magnitude of stress , either step or max ramp concentration
+tstart=300; % time of stress onset
+
+options.tstart=tstart;
+options.tend=maxeT;
+options.param=param;
+options.irange=irange;
+
+%[I, IT]=makePulse(irange,duration,tstart,maxeT);
+
+[I IT]=makeStep(irange,tstart,maxeT);
+
+%[I IT]=makeRamp(irange,tstart,maxeT);
+
+param.Tspan=double([0 maxeT]);
+
+%mutants={'WT','zwf1','trx1/2','zwf1 trx1/2' 'pde2'};
+mutants={'WT'};
+
+options.mutants=mutants;
+
+for j=1:numel(mutants)
+    disp(['Simulating strain: ' mutants{j}]);
+      
+    for i=1:numel(irange)
+        
+        disp(['Simulating condition: ' num2str(i) '/' num2str(length(irange))]);
+        
+        param2(i,j)=param;
+        param2(i,j).IT=IT(i,:);
+        param2(i,j).I=I(i,:);
+        
+        parama=param;
+        parama.I= irange(i);
+        
+        param2(i,j).nullclines= tolanalytics4(0,parama);
+        %         if strcmp(mutants{j},'zwf1')
+        %             param2(i,j).b=0.005;
+        %             %param2(i,j).beta_agg=0.0005;
+        %         end
+        %         if strcmp(mutants{j},'trx1/2')
+        %             param2(i,j).alpha_agg=0.005;
+        %             param2(i,j).b=0.005;
+        %             param2(i,j).beta_agg=0.0005;
+        %         end
+        %         if strcmp(mutants{j},'zwf1 trx1/2')
+        %             param2(i,j).alpha_agg=0.005;
+        %             param2(i,j).b=0.005;
+        %             param2(i,j).beta_agg=0.0005;
+        %         end
+        %
+        %         if strcmp(mutants{j},'pde2')
+        %             param2(i,j).K=10;
+        %            % param2(i,j).b=0.005;
+        %            % param2(i,j).beta_agg=0.0005;
+        %         end
+        
+        [T,Y]=tolmodel4(param2(i,j),funH,funA,funQ,funR);
+        
+        outT{i,j}=T;
+        outY{i,j}=Y;
+          
+    end
+
+    if display
+         hplot=[];
+        %col=shallowColormap(length(irange));
+        
+      
+        hf=figure('Color','w','Position',[100+200*(j-1) 100 600 1200]);
+        col=colormap(lines(length(irange)));
+        
+        p=panel;
+        p.pack('v',{1/4 1/4 1/4 1/4});
+       
+        for i=1:length(irange)
+            displaySim(hf,p,outT{i,j},outY{i,j},param2(i,j),col(i,:));
+        end
+        
+        p.de.margin=7;
+        p.fontsize=20;
+        
+        p(1).select();
+        title(mutants{j});
+        xlim([0 maxeT-param.tscreen]);
+        %ylim([0 2]);
+        set(gca,'FontSize',14,'XTickLabel',{});
+        ylabel('I');
+        
+        p(2).select();
+        xlim([0 maxeT]);
+        set(gca,'FontSize',14,'XTickLabel',{});
+        ylabel('H');
+        xlim([0 maxeT-param.tscreen]);
+      %  ylim([0 1]);
+        
+        p(3).select();
+        set(gca,'FontSize',14);
+        ylabel('A');
+        xlim([0 maxeT-param.tscreen]);
+  %      ylim([0 2]);
+        
+        set(gca,'FontSize',14,'XTickLabel',{});
+        
+        p(4).select();
+        set(gca,'FontSize',14);
+        ylabel('mu');
+        xlim([0 maxeT-param.tscreen]);
+        %ylim([0 1]);
+        set(gca,'FontSize',14);
+  
+        xlim([0 maxeT-param.tscreen]);
+        
+        xlabel('Time (min.)');
+
+        p.fontsize=20;
+        p.marginbottom=20;
+        p.marginleft=25;
+        %ylim([0 2]);
+        
+        xlabel('Time (min.)');
+
+          hf2=figure('Color','w','Position',[500+200*(j-1) 100 600 1200]);
+        col=colormap(lines(length(irange)));
+
+        q=panel;
+        q.pack('v',{1/3 1/3 1/3});
+
+        figure(hf);
+
+             for i=1:length(irange)
+          %  displaySim(hf,p,outT{i,j},outY{i,j},param2(i,j),col(i,:));
+
+            T=outT{i,j};
+            Y=outY{i,j};
+            co=col(i,:);
+
+            par=param2(i,j);
+
+                pix=find(T>par.tscreen,1,'first');
+
+                q(1).select();
+                plot(T(pix:end)-T(pix),Y(pix:end,3),'LineWidth',2,'Color',co); hold on;
+
+                q(2).select();
+                plot(T(pix:end)-T(pix),Y(pix:end,4),'LineWidth',2,'Color',co); hold on;
+
+                q(3).select();
+                plot(T(pix:end)-T(pix),Y(pix:end,4).*Y(pix:end,1),'LineWidth',2,'Color',co); hold on;
+
+             end  
+
+        q.de.margin=7;
+        q.fontsize=20;
+        
+        q(1).select();
+        title(mutants{j});
+        xlim([0 maxeT-param.tscreen]);
+        %ylim([0 2]);
+        set(gca,'FontSize',14,'XTickLabel',{});
+        ylabel('Q');
+        
+        q(2).select();
+        xlim([0 maxeT]);
+        set(gca,'FontSize',14,'XTickLabel',{});
+        ylabel('R');
+        xlim([0 maxeT-param.tscreen]);
+      %  ylim([0 1]);
+        
+        q(3).select();
+        set(gca,'FontSize',14);
+        ylabel('death');
+        xlim([0 maxeT-param.tscreen]);
+        %      ylim([0 2]);
+        
+        set(gca,'FontSize',14);
+        xlabel('Time (min.)');
+
+        q.fontsize=20;
+        q.marginbottom=20;
+        q.marginleft=25;
+        %ylim([0 2]);
+        
+        xlabel('Time (min.)');
+
+        % now plot trajectories in the H / A hyperplan
+   
+        ht=figure('Color','w','Position',[100+200*(j-1) 300 600 600]);
+        
+        nullclines= param2(end,j).nullclines;
+        plot(nullclines.H,nullclines.A2,'Color','k','LineWidth',2,'LineStyle','--'); hold on
+        
+        for i=length(irange):-1:1
+            nullclines= param2(i,j).nullclines;
+            
+            plot(nullclines.H,nullclines.A1,'Color',col(i,:),'LineStyle','--'); hold on
+            
+            T=outT{i,j};
+            pix=find(T>param.tscreen,1,'first');
+           % pix=1;
+            Y=outY{i,j};
+            
+            hplot(i)=plot(Y(pix:end,1),Y(pix:end,2),'LineWidth',3,'Color',col(i,:)); hold on;
+        end
+        
+        nullclines= param2(end,j).nullclines;
+        xlim([0.9*min(nullclines.H) 1.1*max(nullclines.H)]);
+        ylim([0.9*min(nullclines.A2) 1.1*max(nullclines.A2)]);
+        
+        
+        set(gca,'XScale','log','YScale','log','FontSize',20);
+        %  set(gca,'YScale','log','FontSize',20);
+        xlim([0.01 4]);
+        ylim([0.01 4]);
+        
+        xlabel('[H2O2] (mM)');
+        ylabel('A (A.U.)');
+
+
+        % now plot resistance and tolerance as a function of H 
+
+        ht=figure('Color','w','Position',[100 300 1000 600]);
+
+        hext=[];
+        mu=[];
+    
+        for i=1:length(irange)
+          %  displaySim(hf,p,outT{i,j},outY{i,j},param2(i,j),col(i,:));
+
+          T=outT{i,j};
+          Y=outY{i,j};
+
+
+        hext(i)=param2(i,j).I(end);
+        mu(i)= param2(i,j).mu0 .* (1 - Y(end,1)*param.d2) ./ (1 + param.d * Y(end,1).^param.nh);
+        death(i)=Y(end,4).*Y(end,1);
+        end
+
+        subplot(1,2,1);
+        plot(hext,mu,'LineWidth',3)
+        ylabel('Growth rate (min-1)');
+        xlabel('H2O2 (mM)');
+        set(gca,'XScale','lin','YScale','lin','FontSize',20);
+
+        subplot(1,2,2);
+        plot(hext,death,'LineWidth',3)
+        ylabel('Death rate (min^{-1})');
+        xlabel('H2O2 (mM)');
+        set(gca,'XScale','lin','YScale','lin','FontSize',20);
+
+        
+    end
+    
+end
+
+
+function displaySim(hf,p,T,Y,param,col)
+
+figure(hf);
+
+pix=find(T>param.tscreen,1,'first');
+
+p(1).select();
+plot(param.IT(param.tscreen:end)-param.tscreen,param.I(param.tscreen:end),'LineWidth',2,'Color',col); hold on;
+
+p(2).select();
+plot(T(pix:end)-T(pix),Y(pix:end,1),'LineWidth',2,'Color',col); hold on;
+
+p(3).select();
+plot(T(pix:end)-T(pix),Y(pix:end,2),'LineWidth',2,'Color',col); hold on;
+
+ p(4).select();
+ 
+ mu= param.mu0.* (1 - param.d2 * Y(:,1)) ./ (1 + param.d * Y(:,1) .^param.nh);
+
+ plot(T(pix:end)-T(pix),mu(pix:end),'LineWidth',2,'Color',col); hold on;
+
+
+function [I, IT]=makePulse(irange,duration,tstart,maxeT)
+
+%irange=[0.0005 0.001 0.002]; % ramp experiment
+
+%col=colormap(lines(length(irange)));
+I=zeros(length(irange),maxeT);
+IT=I;
+
+for i=1:length(irange)
+    IT(i,:)= linspace(0,maxeT,maxeT);
+    I(i,tstart:tstart+duration-1)=irange(i); %step
+end
+% 
+% function [I, IT]=makeStep(irange,tstart,maxeT)
+% 
+% I=zeros(length(irange),maxeT);
+% IT=I;
+% 
+% for i=1:length(irange)
+%     IT(i,:)= linspace(0,maxeT,maxeT);
+%     I(i,tstart:end)=irange(i); %step
+% end
+
+function [I, IT] = makeStep(irange, tstart, maxeT)
+    numSteps = length(irange);
+    I = zeros(numSteps, maxeT);
+    IT = zeros(numSteps, maxeT);  % Initialize IT correctly
+
+    for i = 1:numSteps
+        IT(i, :) = linspace(0, maxeT-1, maxeT);  % Assuming maxeT is the number of points and time starts at 0
+        I(i, tstart:end) = irange(i);  % Fill with step value from tstart to the end
+    end
+
+function [I, IT] = makeRamp(irange, tstart, maxeT)
+    numSteps = length(irange);  % Number of different ramps based on the length of irange
+    I = zeros(numSteps, maxeT + 1);  % Initialize the output matrix with an extra column for the starting value
+    IT = zeros(numSteps, maxeT + 1);  % Time matrix
+
+    for i = 1:numSteps
+        IT(i, :) = linspace(0, maxeT, maxeT + 1);  % Create a time vector from 0 to maxeT
+        rampStartIndex = find(IT(i,:) >= tstart, 1); % Find the index where time is greater than or equal to tstart
+        rampEndIndex = maxeT + 1 - 200; % End the ramp 100 points before maxeT
+        
+        if isempty(rampStartIndex)
+            rampStartIndex = maxeT + 1; % Ensure ramp starts only if tstart is within bounds
+        end
+        
+        % Ensure that ramp end index is always greater than the start index
+        if rampEndIndex < rampStartIndex
+            rampEndIndex = rampStartIndex;
+        end
+
+        % Create a ramp that starts at 0, remains at 0 until tstart, then linearly increases to irange(i)
+        I(i, rampStartIndex:rampEndIndex) = linspace(0, irange(i), rampEndIndex - rampStartIndex + 1);
+        
+        % Fill the last 100 points with the final value of the ramp
+        I(i, rampEndIndex+1:end) = irange(i);
+    end
+
+
+function cmap=shallowColormap(n)
+
+% n is the number of colors
+
+switch n
+    case 1
+        cmap=[1 0 0];
+        
+    case 2
+        cmap=[1 0 0 ; 0 1 0];
+        
+    case 3
+        cmap=[1 0 0 ; 0 1 0; 0 0 1];
+        
+    otherwise
+        
+        if n<8
+            cmap=jet(10);
+        else
+            
+            cmap=jet(n);
+        end
+        
+        
+        tmp=cmap;
+        tmp(2:2:end,:)=cmap(1:size(cmap,1)/2,:);
+        tmp(1:2:end-1,:)=cmap(size(cmap,1)/2+1:end,:);
+        %cmap=tmp(end:-1:1,:);
+        cmap=tmp;
+        
+        if n<8
+            cmap=cmap(1:n,:);
+        end
+        
+        if n==9
+            cmap(9,:)=[1 0.5 0.5];
+        end
+end
+
+cmap=[0 0 0; cmap];
+
+
+
+
