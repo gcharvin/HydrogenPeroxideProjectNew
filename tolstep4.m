@@ -1,9 +1,8 @@
-function [outT,outY,options]=tolstep3(display)
+function [outT,outY,options]=tolstep4(display)
 
 if nargin==0
     display=0;
 end
-
 display=1;
 
 % define the time-sequence for input (external H2O2)
@@ -16,7 +15,7 @@ outT={};
 outY={};
 options=[];
 
-irange=0.1*[1 2 4 8]; % magnitude of stress , either step or max ramp concentration
+irange=0.1*[1 2 4 5 6 7 8]; % magnitude of stress , either step or max ramp concentration
 tstart=300; % time of stress onset
 
 options.tstart=tstart;
@@ -26,9 +25,9 @@ options.irange=irange;
 
 %[I, IT]=makePulse(irange,duration,tstart,maxeT);
 
-[I IT]=makeStep(irange,tstart,maxeT);
+%[I IT]=makeStep(irange,tstart,maxeT);
 
-%[I IT]=makeRamp(irange,tstart,maxeT);
+[I IT]=makeRamp(irange,tstart,maxeT);
 
 param.Tspan=double([0 maxeT]);
 
@@ -250,6 +249,7 @@ for j=1:numel(mutants)
 
 
         hext(i)=param2(i,j).I(end);
+       % mu(i)= param2(i,j).mu0 .* (1 - Y(end,1)*param.d2) ./ (1 + param.d * Y(end,1).^param.nh);
         mu(i)= param2(i,j).mu0 .* (1 - Y(end,1)*param.d2) ./ (1 + param.d * Y(end,1).^param.nh);
         death(i)=Y(end,4).*Y(end,1);
         end

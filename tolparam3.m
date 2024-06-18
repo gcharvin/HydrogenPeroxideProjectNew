@@ -1,13 +1,15 @@
 function [param,funH,funA,funQ,funR]=tolparam3
+% this model is the model #1 in the document : recycling fueled by
+% cell growth 
 
 % param
 param=[];
 param.tscreen=300; % masks the first x frames to allow for the equilibrium to settle. 
 
 % H2O2 detoxification 
-param.e=0.02; %0.01; 
+param.e=0.005; %0.02; %0.01; 
 param.a=0.1; % double(0.01); % entry of H2O2 into cell
-param.b=1;  %degradation of H2O2 
+param.b=0.2;  %degradation of H2O2 
 param.g=1; %Antiox synthesis rate
 param.kh=1; % half activation of Yap1 regulon 
 param.nh=1; % non linearity in activiation of Yap1 regulon
@@ -32,7 +34,8 @@ syms funR(H,Q,R)
 
 funH(H,A,I) = param.e + param.a * (I-H) - param.b * A * H * max(0,(1 - param.b *H / param.k));
 
-funA(H,A) = param.mu0 *max(0, (1 - param.b *H / param.k)) * (param.a0+param.g * (H.^param.nh/(H.^param.nh+(param.kh)^param.nh) - A)); 
+%funA(H,A) = param.mu0 *max(0, (1 - param.b *H / param.k)) * (param.a0+param.g * (H.^param.nh/(H.^param.nh+(param.kh)^param.nh) - A)); 
+funA(H,A) = param.mu0 *max(0, (1 - param.b *H / param.k)) * (param.a0+param.g * H - A); 
 
 funQ(H,Q,R)= (param.kq * H * R  / param.k  - (param.mu0   + param.k2) * Q ) * max(0,1 - param.b *H / param.k);
 

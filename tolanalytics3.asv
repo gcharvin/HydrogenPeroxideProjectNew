@@ -1,9 +1,10 @@
 function nullclines=tolanalytics3(display,param)
 % computes and drwas nucclines 
 
+
 if nargin<2
 [param,funH,funA]=tolparam3;
-param.I=0.5;
+param.I=0.7;
 end
 
 if nargin==0
@@ -28,14 +29,12 @@ figure('Color','w'), plot(H,A1,'Color','r','lineWidth',2);
 hold on; 
 plot(H,A2,'Color','b','lineWidth',2);
 
-xx=param.k/param.b;
 
-line([xx xx],[0.01 10],'LineWidth',1,'LineStyle','--','Color','k');
 xlabel('[H2O2] (mM)');
 ylabel('Antioxodants (A.U.)');
 
 set(gca,'XScale','log','YScale','log','FontSize',16)
-xlim([0.02 2]);
-ylim([0.02 5]);
+xlim([0.01 10]);
+ylim([0.01 10]);
 end
 

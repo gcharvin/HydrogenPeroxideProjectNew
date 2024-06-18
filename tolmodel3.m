@@ -11,7 +11,7 @@ options=odeset('NonNegative',1:4,'RelTol',1e-3,'AbsTol',[1e-3 1e-3 1e-3 1e-3],'M
 
 function dydt = myode(t,y,param, funH, funA,funQ,funR)
 
-%int,in
+%int,i
 in = interp1(param.IT,param.I,t);
 
 % Interpolate the data set (ft,f) at time t

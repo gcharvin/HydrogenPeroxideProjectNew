@@ -4,7 +4,7 @@ function nullclines=tolanalytics4(display,param)
 
 if nargin<2
 [param,funH,funA]=tolparam4;
-param.I=0.25;
+param.I=0.1;
 end
 
 if nargin==0

@@ -9,14 +9,15 @@ display=1;
 % define the time-sequence for input (external H2O2)
 maxeT=1100; % max time to consider 
 
-[param,funH,funA,funQ,funR]=tolparam3; % initialize paremeters for WT;
+[param,funH,funA,funQ,funR]=tolparam_base; % initialize paremeters for WT;
 param.nullclines=[];
 
 outT={};
 outY={};
 options=[];
 
-irange=0.1*[ 7]; % magnitude of stress , either step or max ramp concentration
+%irange=0.1*[ 1 2 4 5 6 7 8]; % magnitude of stress , either step or max ramp concentration
+irange=0.1*[ 5];
 tstart=300; % time of stress onset
 
 
@@ -52,7 +53,7 @@ for j=1:numel(mutants)
         parama=param;
         parama.I= irange(i);
         
-        param2(i,j).nullclines= tolanalytics3(1,parama);
+        param2(i,j).nullclines= tolanalytics_base(0,parama);
         %         if strcmp(mutants{j},'zwf1')
         %             param2(i,j).b=0.005;
         %             %param2(i,j).beta_agg=0.0005;
@@ -74,7 +75,7 @@ for j=1:numel(mutants)
         %            % param2(i,j).beta_agg=0.0005;
         %         end
         
-        [T,Y]=tolmodel3(param2(i,j),funH,funA,funQ,funR);
+        [T,Y]=tolmodel_base(param2(i,j),funH,funA,funQ,funR);
         
         outT{i,j}=T;
         outY{i,j}=Y;
@@ -263,7 +264,7 @@ legend(hplot, legendStrings);
 
 
         hext(i)=param2(i,j).I(end);
-        mu(i)= param2(i,j).mu0 * max(0,(1 - Y(end,1) / param.k));
+        mu(i)= param2(i,j).mu0 /  (1+param.b * Y(end,1) / param.k);
         death(i)=Y(end,4).*Y(end,1);
         end
 
@@ -302,7 +303,9 @@ plot(T(pix:end)-T(pix),Y(pix:end,2),'LineWidth',2,'Color',col); hold on;
 
  p(4).select();
  
- mu= param.mu0 * max(0,(1 - Y(:,1) / param.k));
+ Y(:,1)
+ 
+ mu= param.mu0 / ( 1+ param.b * Y(:,1) / param.k)
 
  plot(T(pix:end)-T(pix),mu(pix:end),'LineWidth',2,'Color',col); hold on;
 
